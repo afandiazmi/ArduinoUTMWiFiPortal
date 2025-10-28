@@ -1,4 +1,4 @@
-// // This example demonstrates a simple usage of the ArduinoArduinoUTMWiFiPortal library to connect
+// // This example demonstrates a simple usage of the ArduinoUTMWiFiPortal library to connect
 // // to the UTM WiFi captive portal and maintain the connection.
 //  ______    ______                           __  __ 
 // /      \  /      \                         /  |/  |
@@ -12,7 +12,7 @@
 // Created by Afandi Azmi, 2025
 
 #include <WiFi.h>
-#include <ArduinoArduinoUTMWiFiPortal.h> // Include the library header
+#include <ArduinoUTMWiFiPortal.h> // Include the library header
 
 // --- Your Credentials ---
 const char* WIFI_SSID = "UTMWiFi"; // Or your specific SSID
@@ -21,7 +21,7 @@ const char* PORTAL_USER = "YourID";
 const char* PORTAL_PASS = "YourPassword";
 
 // --- Create an instance of the library ---
-ArduinoArduinoUTMWiFiPortal portal(PORTAL_USER, PORTAL_PASS);
+ArduinoUTMWiFiPortal portal(PORTAL_USER, PORTAL_PASS);
 
 void setup() {
   Serial.begin(115200);
