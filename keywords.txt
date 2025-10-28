@@ -1,4 +1,4 @@
-ArduinoUTMWiFiPortal	KEYWORD1
+ArduinoArduinoUTMWiFiPortal	KEYWORD1
 setCheckInterval	KEYWORD2
 keepConnected	KEYWORD2
 attemptLogin	KEYWORD2

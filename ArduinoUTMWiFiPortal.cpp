@@ -12,9 +12,9 @@
 
 
 
-#include "UTMWiFiPortal.h"
+#include "ArduinoUTMWiFiPortal.h"
 
-UTMWiFiPortal::UTMWiFiPortal(const char* username, const char* password) {
+ArduinoUTMWiFiPortal::ArduinoUTMWiFiPortal(const char* username, const char* password) {
   _username = username;
   _password = password;
   _lastCheckTime = 0;
@@ -22,11 +22,11 @@ UTMWiFiPortal::UTMWiFiPortal(const char* username, const char* password) {
   _secureClient.setInsecure(); // IMPORTANT for UTM portal
 }
 
-void UTMWiFiPortal::setCheckInterval(unsigned long interval) {
+void ArduinoUTMWiFiPortal::setCheckInterval(unsigned long interval) {
   _checkInterval = interval;
 }
 
-bool UTMWiFiPortal::checkInternet() {
+bool ArduinoUTMWiFiPortal::checkInternet() {
   Serial.println("[PortalLib] Checking internet connection...");
   HTTPClient httpCheck;
   bool isConnected = false;
@@ -50,7 +50,7 @@ bool UTMWiFiPortal::checkInternet() {
   return isConnected;
 }
 
-bool UTMWiFiPortal::attemptLogin() {
+bool ArduinoUTMWiFiPortal::attemptLogin() {
   bool loginSuccess = false;
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("[PortalLib] Attempting captive portal login...");
@@ -110,7 +110,7 @@ bool UTMWiFiPortal::attemptLogin() {
   return loginSuccess;
 }
 
-void UTMWiFiPortal::keepConnected() {
+void ArduinoUTMWiFiPortal::keepConnected() {
   unsigned long currentTime = millis();
   if (currentTime - _lastCheckTime >= _checkInterval) {
     if (!checkInternet()) {

@@ -13,8 +13,8 @@
 
 
 
-#ifndef UTMWiFiPortal_h
-#define UTMWiFiPortal_h
+#ifndef ArduinoUTMWiFiPortal_h
+#define ArduinoUTMWiFiPortal_h
 
 #include "Arduino.h"
 #include <WiFi.h>
@@ -22,10 +22,10 @@
 #include <WiFiClient.h>
 #include <HTTPClient.h>
 
-class UTMWiFiPortal {
+class ArduinoUTMWiFiPortal {
   public:
     // Constructor
-    UTMWiFiPortal(const char* username, const char* password);
+    ArduinoUTMWiFiPortal(const char* username, const char* password);
 
     // Set the interval for checking connection (in milliseconds)
     void setCheckInterval(unsigned long interval);
