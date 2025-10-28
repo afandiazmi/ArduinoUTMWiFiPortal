@@ -1,6 +1,6 @@
 #include "ArduinoUTMWiFiPortal.h"
 
-// XOR-based string decoder
+// XOR-based string decoder.
 String ArduinoUTMWiFiPortal::x1(const char* s, int k) {
   String r = "";
   int l = strlen(s);
