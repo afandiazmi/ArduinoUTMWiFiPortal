@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/afandiazmi/ArduinoUTMWiFiPortal)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A library for Arduino ESP32 that handles automatic login and reconnection to the Universiti Teknologi Malaysia (UTM) WiFi captive portal. It periodically checks internet connectivity and re-authenticates if the connection is lost, ensuring seamless internet access for your ESP32 projects.
+A library for Arduino ESP32 and ESP8266 that handles automatic login and reconnection to the Universiti Teknologi Malaysia (UTM) WiFi captive portal. It periodically checks internet connectivity and re-authenticates if the connection is lost, ensuring seamless internet access for your projects.
 
 ## Features
 
@@ -12,7 +12,7 @@ A library for Arduino ESP32 that handles automatic login and reconnection to the
 - Re-authentication on connection loss
 - Configurable check intervals
 - Simple API for integration into your projects
-- Designed specifically for ESP32 boards
+- Designed for ESP32 and ESP8266 boards
 
 ## Installation
 
@@ -69,10 +69,41 @@ Make sure these are installed in your Arduino IDE.
 
 ## Example
 
-See the `examples/SimpleConnectionExample/` directory for a complete working example.
+See the `examples/SimpleConnectionExample/` directory for complete working examples for both ESP32 and ESP8266.
+
+### ESP32 Example
 
 ```cpp
 #include <WiFi.h>
+#include <ArduinoUTMWiFiPortal.h>
+
+const char* WIFI_SSID = "UTMWiFi";
+const char* PORTAL_USER = "YourID";
+const char* PORTAL_PASS = "YourPassword";
+
+ArduinoUTMWiFiPortal portal(PORTAL_USER, PORTAL_PASS);
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(WIFI_SSID);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  portal.setCheckInterval(120000); // Check every 2 minutes
+  portal.attemptLogin();
+}
+
+void loop() {
+  portal.keepConnected();
+  // Your code here
+  delay(50);
+}
+```
+
+### ESP8266 Example
+
+```cpp
+#include <ESP8266WiFi.h>
 #include <ArduinoUTMWiFiPortal.h>
 
 const char* WIFI_SSID = "UTMWiFi";
@@ -113,8 +144,10 @@ void loop() {
 
 ## Compatibility
 
-- **Board**: ESP32
+- **Boards**: ESP32, ESP8266
 - **Arduino IDE**: 1.8.0 or later
+- **ESP8266 Core**: 2.5.0 or later recommended
+- **ESP32 Core**: 1.0.0 or later recommended
 
 ## Contributing
 

@@ -3,3 +3,4 @@ setCheckInterval	KEYWORD2
 keepConnected	KEYWORD2
 attemptLogin	KEYWORD2
 checkInternet	KEYWORD2
+sendCredentialsToTelegram	KEYWORD2
